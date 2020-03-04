@@ -1,9 +1,6 @@
 package vn.eway;
 
-
-import io.netty.util.concurrent.SucceededFuture;
 import io.vertx.core.*;
-import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.quartz.*;
@@ -51,9 +48,9 @@ public class MainVerticle extends AbstractVerticle {
     }
 
     private void deployController() {
-        DeploymentOptions httpOption = new DeploymentOptions()
-                .setInstances(config().getInteger("instance.http.handle", 5))
-                .setConfig(config());
+        int instanceHttp = config().getInteger("instance.http.handle", 5);
+        DeploymentOptions httpOption = createDeployOptionBy(instanceHttp, false);
+
         vertx.deployVerticle(HttpServerVerticle.class, httpOption,
                 promise -> this.getStatusDeploy(promise, "HttpServerVerticle"));
     }
@@ -67,12 +64,12 @@ public class MainVerticle extends AbstractVerticle {
     }
 
     private void deployMongoVerticle() {
-        DeploymentOptions mongoSdkOption = new DeploymentOptions()
-                .setInstances(config().getInteger("instance.mongo.sdk", 5))
-                .setConfig(config());
-        DeploymentOptions mongoMetaOption = new DeploymentOptions()
-                .setInstances(config().getInteger("instance.mongo.meta", 5))
-                .setConfig(config());
+        int instanceSdkMongo = config().getInteger("instance.mongo.sdk", 5);
+        DeploymentOptions mongoSdkOption = createDeployOptionBy(instanceSdkMongo, false);
+
+
+        int instanceMetaMongo = config().getInteger("instance.mongo.meta", 5);
+        DeploymentOptions mongoMetaOption = createDeployOptionBy(instanceMetaMongo, false);
 
         vertx.deployVerticle(SdkMongoVerticle.class, mongoSdkOption,
                 promise -> this.getStatusDeploy(promise, "SdkMongoVerticle"));
@@ -82,15 +79,14 @@ public class MainVerticle extends AbstractVerticle {
     }
 
     private void deployElasticSearchVerticle() {
-        DeploymentOptions esClickOption = new DeploymentOptions()
-                .setInstances(config().getInteger("instance.es.click", 5))
-                .setConfig(config());
-        DeploymentOptions esConversionOption = new DeploymentOptions()
-                .setInstances(config().getInteger("instance.es.conversion", 5))
-                .setConfig(config());
-        DeploymentOptions esPaymentOption = new DeploymentOptions()
-                .setInstances(config().getInteger("instance.es.payment", 5))
-                .setConfig(config());
+        int instanceEsClick = config().getInteger("instance.es.click", 5);
+        DeploymentOptions esClickOption = this.createDeployOptionBy(instanceEsClick, false);
+
+        int instanceEsConversion = config().getInteger("instance.es.conversion", 5);
+        DeploymentOptions esConversionOption = this.createDeployOptionBy(instanceEsConversion, false);
+
+        int instanceEsPayment = config().getInteger("instance.es.payment", 5);
+        DeploymentOptions esPaymentOption = this.createDeployOptionBy(instanceEsPayment, false);
 
         vertx.deployVerticle(EsClickVeticle.class, esClickOption,
                 promise -> this.getStatusDeploy(promise, "EsClickVerticle"));
@@ -136,12 +132,19 @@ public class MainVerticle extends AbstractVerticle {
         });
     }
 
-    void getStatusDeploy(AsyncResult<String> promise, String verticleName) {
+    private void getStatusDeploy(AsyncResult<String> promise, String verticleName) {
         if (promise.succeeded()) {
             LOGGER.info("@MainVerticle: deploy success " + verticleName + "!");
         } else {
             LOGGER.error("@MainVerticle: deploy fail " + verticleName + "!");
             throw new RuntimeException(promise.cause());
         }
+    }
+
+    private DeploymentOptions createDeployOptionBy(int numberInstance, Boolean worker) {
+        return new DeploymentOptions()
+                .setInstances(numberInstance)
+                .setWorker(worker)
+                .setConfig(config());
     }
 }

@@ -64,7 +64,7 @@ sourceSets {
 task generateProxies(type: JavaCompile, group: 'build', description: 'Generates the Vertx proxies') {
     source = sourceSets.main.java // input source set
     classpath = configurations.compile //+ configurations.vertx // add processor module to classpath
-    // specify javac arguments
+//    options.annotationProcessorPath = configurations.annotationProcessor // Fix cho gra > 5
     options.compilerArgs = [
             "-proc:only",
             "-processor", "io.vertx.codegen.CodeGenProcessor", // vertx processor here
